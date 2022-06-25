@@ -1,0 +1,8 @@
+Z_notebook/Untitled.ipynb
+pip.txt
+.env
+.social_network/__pycache__/
+.idea/
+venv/
+*.pyc
+**/__pycache__

@@ -1,0 +1,22 @@
+<nav class="navbar bg-light">
+    <div class="container-fluid">
+
+        <a class="navbar-brand" href="/">KPI Преподавателей</a>
+
+        {% if user.is_authenticated %}
+        <span class="navbar-brand">
+            <strong>Общее количество баллов: {{ user.get_amount_points }}</strong>
+        </span>
+
+        <span class="navbar-text">
+            Добро пожаловать, {{ user.full_name }} |
+            <a href="{% url 'user_logout' %}">Выход</a>
+        </span>
+        {% else %}
+        <span class="navbar-text">
+            <a href="{% url 'user_login' %}">Авторизация</a>
+        </span>
+        {% endif %}
+
+    </div>
+</nav>

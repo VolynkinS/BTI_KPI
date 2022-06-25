@@ -1,0 +1,32 @@
+site_name: social_network
+
+site_dir: 'wiki/GENERIC/generic/build'
+
+nav:
+  - index: index.md
+  - django cheat sheet: django_cheat_sheet.md
+  - pip: pip.md
+  - dev: dev.md
+  - settings: settings.md
+  - models: blog/models.md
+  - blog: blog/view.md
+
+dev_addr:
+  127.0.0.1:8200
+
+#markdown_extensions:
+#  - pymdownx.inlinehilite
+#  - pymdownx.superfences
+#  - pymdownx.snippets
+#  - toc:
+#      permalink: True
+
+theme:
+  name: material
+
+#plugins:
+#  - search
+#  - awesome-pages
+
+site_author:
+  Alexandr Volynkin
