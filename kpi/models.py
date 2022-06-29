@@ -11,7 +11,7 @@ class Kpi(models.Model):
         ordering = ['id']
 
     def get_absolute_url(self):
-        return reverse_lazy('kpi:home_new_1', kwargs={'pk': self.pk})
+        return reverse_lazy('kpi:home', kwargs={'pk': self.pk})
 
     def __str__(self):
         return f'{self.pk}: {self.name}'

@@ -1,0 +1,25 @@
+{% extends 'base.html' %}
+
+
+{% block content %}
+<!--TODO Вывести все критерии и индикаторы с категориями-->
+
+{% for criterion in criteria %}
+<div class="card">
+    <div class="card-header">
+        <h4>{{ criterion.name }}</h4>
+    </div>
+    {% for indicator in criterion.indicator_set.all %}
+        <div class="card-body">
+            <h5 class="card-title">{{ indicator.name }}</h5>
+            {% for category in indicator.category.all %}
+            <ul class="list-group">
+                <li class="list-group-item">{{ category.name }}: {{ category.point }}</li>
+            </ul>
+            {% endfor %}
+        </div>
+    {% endfor %}
+</div>
+<br>
+{% endfor %}
+{% endblock %}

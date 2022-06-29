@@ -39,15 +39,6 @@ def create_forms(indicators, indicators_len, initial, entries, *, post=None):
     return forms
 
 
-# def home(request, pk=1):
-#     criteria_on_page = Criteria.objects.filter(kpi__pk=pk).prefetch_related('indicator_set', 'indicator_set__category')
-#
-#     context = {
-#         'criteria': criteria_on_page,
-#     }
-#     return render(request, 'kpi/home.html', context=context)
-
-
 # https://collingrady.wordpress.com/2008/02/18/editing-multiple-objects-in-django-with-newforms/
 def home_2(request, pk=1):
     criteria_on_page = Criteria.objects.filter(kpi__pk=pk).prefetch_related('indicator_set', 'indicator_set__category')
@@ -63,7 +54,6 @@ def home_2(request, pk=1):
             d = {'indicator': indicator.pk}
             initial_list.append(d)
 
-        # TODO обработать формы, сравнить с категорями индикатора и сохраненить информацию
         if request.method == "POST":
             forms = create_forms(indicators=indicators_on_page, indicators_len=indicators_count, initial=initial_list,
                                  entries=entries_user, post=request.POST)
@@ -90,17 +80,17 @@ def home_2(request, pk=1):
     return render(request, 'kpi/home_2.html', context=context)
 
 
-def create_forms_new(indicators, form, indicators_len, initial, entries, *, post=None):
+def create_forms_new(indicators, form, indicators_len, initial, answers, *, post=None):
     """
-    Create GET or POST request forms for each indicator on the page
+    Create GET or POST request model forms and simply forms for each indicator on the page
     """
 
-    # {indicator.id_1: {'form_1': form_1, 'form_2': form_2}, indicator.id_2: {'form_1': form_1, 'form_2': form_2}}
+    # {indicator_1: {'form_1': form_1, 'form_2': form_2}, indicator_2: {'form_1': form_1, 'form_2': form_2}}
     forms = {}
-    if entries:
+    if answers:
         for indicator, x, init_entry in zip(indicators, range(indicators_len), initial):
-            if indicator in [entry.indicator for entry in entries]:
-                form_1 = UserAnswerForm(post, prefix=str(x), instance=entries.get(indicator=indicator))
+            if indicator in (entry.indicator for entry in answers):
+                form_1 = UserAnswerForm(post, prefix=str(x), instance=answers.get(indicator=indicator))
                 form_2 = form(post, prefix=str(x))
                 forms[indicator] = {'form_1': form_1, 'form_2': form_2}
             else:
@@ -115,15 +105,14 @@ def create_forms_new(indicators, form, indicators_len, initial, entries, *, post
     return forms
 
 
-def valid_conditions_1(indicator_current, new_answer, form2_current, request):
-    point = None
+def valid_conditions_1(indicator_current, new_answer, form2_current):
     percent = form2_current.cleaned_data['students_ok'] / form2_current.cleaned_data['students_all'] * 100
 
+    point = None
     for category in indicator_current.category.all():
         if category.condition.percent_min <= percent <= category.condition.percent_max:
             point = category.point
 
-    new_answer.user_id = request.user.pk
     new_answer.point = point
     new_answer.text = f'Всего воспитанников: {form2_current.cleaned_data["students_all"]}\n' \
                       f'Кол-во воспитанников подходящих к показателю: {form2_current.cleaned_data["students_ok"]}\n' \
@@ -132,30 +121,32 @@ def valid_conditions_1(indicator_current, new_answer, form2_current, request):
     return new_answer
 
 
-def valid_conditions_3(indicator_current, new_answer, form2_current, request):
+def valid_conditions_3(indicator_current, new_answer, form2_current):
     content_text = form2_current.cleaned_data['content']
     content_list = content_text.split('\r\n')
-    print(content_list)
     len_text = len(content_text)
     len_list = len(content_list)
 
     point = None
-    if len_text:
-        for category in indicator_current.category.all():
+    for category in indicator_current.category.all():
+        if len_text:
             if category.condition3.amount_min <= len_list <= category.condition3.amount_max:
                 point = category.point
-                # print(len_list, point, category)
+                break
+        elif content_list[0] == '':
+            if category.condition3.amount_min <= len_text <= category.condition3.amount_max:
+                point = category.point
+                break
     else:
         point = 0
 
-    new_answer.user_id = request.user.pk
     new_answer.point = point
     new_answer.text = f'Количество: {len_list if len_text else len_text}\n' \
                       f'Все названия: {"; ".join(content_list)}\n'
     return new_answer
 
 
-def valid_conditions_4(indicator_current, new_answer, form2_current, request):
+def valid_conditions_4(indicator_current, new_answer, form2_current):
     content_text = form2_current.cleaned_data['content']
     content_list = content_text.split('\r\n')
     len_text = len(content_text)
@@ -164,32 +155,30 @@ def valid_conditions_4(indicator_current, new_answer, form2_current, request):
     point = None
     if len_text:
         for category in indicator_current.category.all():
-            if len_text:
-                point = category.point
+            point = category.point
     else:
         point = 0
 
-    new_answer.user_id = request.user.pk
     new_answer.point = point
     new_answer.text = f'Количество: {len_list if len_text else len_text}\n' \
                       f'Все названия: {"; ".join(content_list)}\n'
     return new_answer
 
 
-def home_new_1(request, pk):
+def home(request, pk):
     if pk == 2:
         return redirect('kpi:home_2', pk=2)
 
-    forms_pk = {1: NumberStudentsForm, 2: None, 3: AmountEventForm, 4: AmountEventForm}
-    criteria_on_page = Criteria.objects.filter(kpi__pk=pk).prefetch_related('indicator_set', 'indicator_set__category',
-                                                                            'indicator_set__category__condition')
+    criteria_on_page = Criteria.objects.filter(kpi__pk=pk).prefetch_related('indicator_set__category__condition')
     context = {'criteria': criteria_on_page}
 
     if request.user.is_authenticated:
-        indicators_on_page = Indicator.objects.filter(criteria__kpi__pk=pk).\
-            prefetch_related('category', 'category__condition')
+        forms_pk = {1: NumberStudentsForm, 2: None, 3: AmountEventForm, 4: AmountEventForm}
+        indicators_on_page = Indicator.objects.filter(criteria__kpi__pk=pk). \
+            prefetch_related('category__condition')
         indicators_count = indicators_on_page.count()
-        entries_user = UserAnswer.objects.filter(user_id=request.user.pk, indicator__in=indicators_on_page)
+        user_answers = UserAnswer.objects.filter(user_id=request.user.pk,
+                                                 indicator__in=indicators_on_page).select_related('indicator')
 
         # To initialize with default form data
         initial_list = []
@@ -197,25 +186,28 @@ def home_new_1(request, pk):
             d = {'indicator': indicator.pk}
             initial_list.append(d)
 
+        # This populates create_forms_new parameters
+        forms_kwargs = {'indicators': indicators_on_page, 'form': forms_pk[pk],
+                        'indicators_len': indicators_count, 'initial': initial_list}
+
         if request.method == "POST":
-            forms = create_forms_new(indicators=indicators_on_page, form=forms_pk[pk],
-                                     indicators_len=indicators_count, initial=initial_list,
-                                     entries=entries_user, post=request.POST)
+            forms = create_forms_new(**forms_kwargs, answers=user_answers, post=request.POST)
 
             # Validation of all forms
-            print('before if form.valid')
-            if all([form.is_valid() for i in forms.values() for form in i.values()]):
+            if all((form.is_valid() for x in forms.values()
+                                    for form in x.values())):
                 for indicator, forms_dict in forms.items():
                     # Get data
                     # form_1, form_2 = UserAnswerForm, NoModelForm=(example: NumberStudentsForm)
                     form_1, form_2 = forms_dict.values()
                     new_answer = form_1.save(commit=False)
                     if pk == 1:
-                        new_answer = valid_conditions_1(indicator, new_answer, form_2, request)
-                    if pk == 3:
-                        new_answer = valid_conditions_3(indicator, new_answer, form_2, request)
-                    if pk == 4:
-                        new_answer = valid_conditions_4(indicator, new_answer, form_2, request)
+                        new_answer = valid_conditions_1(indicator, new_answer, form_2)
+                    elif pk == 3:
+                        new_answer = valid_conditions_3(indicator, new_answer, form_2)
+                    elif pk == 4:
+                        new_answer = valid_conditions_4(indicator, new_answer, form_2)
+                    new_answer.user_id = request.user.pk
                     new_answer.save()
 
                 # Recalculate user's total points
@@ -223,17 +215,10 @@ def home_new_1(request, pk):
                 request.user.save()
                 return redirect('kpi:home_2', pk=pk)
         else:
-            if entries_user.exists():
-                forms = create_forms_new(indicators=indicators_on_page, form=forms_pk[pk],
-                                         indicators_len=indicators_count,
-                                         initial=initial_list, entries=entries_user, post=None)
+            if user_answers.exists():
+                forms = create_forms_new(**forms_kwargs, answers=user_answers, post=None)
             else:
-                forms = create_forms_new(indicators=indicators_on_page, form=forms_pk[pk],
-                                         indicators_len=indicators_count,
-                                         initial=initial_list, entries=False, post=None)
+                forms = create_forms_new(**forms_kwargs, answers=False, post=None)
         context['forms'] = forms
 
-    if pk == 1:
-        return render(request, 'kpi/home_new_1.html', context=context)
-    if pk == 3 or pk == 4:
-        return render(request, 'kpi/home_new_3.html', context=context)
+    return render(request, 'kpi/home.html', context=context)

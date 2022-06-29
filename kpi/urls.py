@@ -4,8 +4,7 @@ from . import views
 app_name = 'kpi'
 
 urlpatterns = [
-    # path('', views.home, name='home'),
-    path('<int:pk>/', views.home_new_1, name='home_new_1'),
+    path('<int:pk>/', views.home, name='home'),
     path('answers/<int:pk>/', views.home_2, name='home_2'),
 
 ]
