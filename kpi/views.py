@@ -1,35 +1,12 @@
-from django.contrib.auth import authenticate, login, logout
-from django.contrib.auth.decorators import login_required
 from django.shortcuts import render, redirect
 from kpi.models import Criteria, Indicator, UserAnswer
-from kpi.forms import UserLoginForm, UserAnswerForm, NumberStudentsForm, AmountEventForm
-
-
-def user_login(request):
-    if request.method == 'POST':
-        form = UserLoginForm(data=request.POST)
-        if form.is_valid():
-            user = authenticate(request, username=form.cleaned_data['username'],
-                                password=form.cleaned_data['password'])
-            if user is not None:
-                login(request, user)
-                return redirect('kpi:home_new_1', pk=1)
-    else:
-        form = UserLoginForm()
-    return render(request, 'kpi/user_login.html', {'form': form})
-
-
-@login_required
-def user_logout(request):
-    logout(request)
-    return redirect('kpi:home_new_1', pk=1)
+from kpi.forms import UserAnswerForm, NumberStudentsForm, AmountEventForm
 
 
 def create_forms(indicators, indicators_len, initial, entries, *, post=None):
     """
     Create GET or POST request forms for each indicator on the page
     """
-
     forms = {}
     for indicator, x, init_entry in zip(indicators, range(indicators_len), initial):
         if indicator in [entry.indicator for entry in entries]:
@@ -84,7 +61,6 @@ def create_forms_new(indicators, form, indicators_len, initial, answers, *, post
     """
     Create GET or POST request model forms and simply forms for each indicator on the page
     """
-
     # {indicator_1: {'form_1': form_1, 'form_2': form_2}, indicator_2: {'form_1': form_1, 'form_2': form_2}}
     forms = {}
     if answers:

@@ -10,11 +10,11 @@
 
         <span class="navbar-text">
             Добро пожаловать, {{ user.full_name }} |
-            <a href="{% url 'user_logout' %}">Выход</a>
+            <a href="{% url 'users:user_logout' %}">Выход</a>
         </span>
         {% else %}
         <span class="navbar-text">
-            <a href="{% url 'user_login' %}">Авторизация</a>
+            <a href="{% url 'users:user_login' %}">Авторизация</a>
         </span>
         {% endif %}
 

@@ -16,14 +16,12 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import path, include
 from kpi_system import settings
-from kpi import views
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('', include('kpi.urls')),
+    path('', include('users.urls')),
+    path('kpi/', include('kpi.urls')),
 
-    path('login/', views.user_login, name='user_login'),
-    path('logout/', views.user_logout, name='user_logout'),
 ]
 
 if settings.DEBUG:
