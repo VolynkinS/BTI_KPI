@@ -21,7 +21,6 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('user/', include('users.urls')),
     path('', include('kpi.urls')),
-
 ]
 
 if settings.DEBUG:
